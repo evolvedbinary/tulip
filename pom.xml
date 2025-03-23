@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Tulip - XPath and XQuery Parser
+    Copyright (c) 2025 Evolved Binary
+
+    Use of this software is governed by the Business Source License included
+    in the LICENSE file and at www.mariadb.com/bsl11.
+
+    Change Date: 2028-03-23
+
+    On the date above, in accordance with the Business Source License, use
+    of this software will be governed by the Apache License, Version 2.0.
+
+    Additional Use Grant: None
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.evolvedbinary.tulip</groupId>
+    <artifactId>tulip</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <name>Tulip</name>
+    <description>XPath and XQuery Parser</description>
+    <url>https://github.com/evolvedbinary/tulip</url>
+    <inceptionYear>2025</inceptionYear>
+
+    <organization>
+        <name>Evolved Binary</name>
+        <url>https://www.evolvedbinary.com</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>Business Source Licence 1.1</name>
+            <url>https://mariadb.com/bsl11/</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Adam Retter</name>
+            <organization>Evolved Binary</organization>
+            <url>https://www.evolvedbinary.com</url>
+            <email>adam@evolvedbinary.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/evolvedbinary/tulip.git</connection>
+        <developerConnection>scm:git:https://github.com/evolvedbinary/tulip.git</developerConnection>
+        <url>scm:git:https://github.com/evolvedbinary/tulip.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <properties>
+        <project.build.source>8</project.build.source>
+        <project.build.target>8</project.build.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.12.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>4.6</version>
+                <configuration>
+                    <licenseSets>
+
+                        <licenseSet>
+                            <header>com/mycila/maven/plugin/license/templates/BUSL-11.txt</header>
+                            <properties>
+                                <change-date>2028-03-23</change-date>  <!-- TODO(AR) see: 'What is considered a major version for there to be a new BSL and new Change Date?' at https://mariadb.com/bsl-faq-adopting/#major -->
+                                <change-license>Apache License, Version 2.0</change-license>
+                                <additional-use-grant>None</additional-use-grant>
+                            </properties>
+                            <excludes>
+                                <exclude>.clabot</exclude>
+                            </excludes>
+                        </licenseSet>
+
+                    </licenseSets>
+                    <failIfMissing>true</failIfMissing>
+                    <strictCheck>true</strictCheck>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${project.build.source}</source>
+                    <target>${project.build.target}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>
