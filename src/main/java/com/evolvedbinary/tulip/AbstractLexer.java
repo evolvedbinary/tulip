@@ -90,6 +90,14 @@ abstract class AbstractLexer implements Lexer {
         }
 
         forward += count;
+    } // Doubt - When do we reset our buffers? Wouldn't this throw an error once more than 2*buffersize characters have been read?
+
+    protected byte peekNextChar() {
+        if(currentBufferLength+1>forward+1) {
+            return currentBuffer[forward+1];
+        } else {
+            return ZERO;// Doubt - Is there any way to read the next char without moving ahead the forward pointer?
+        }
     }
 
     private int loadBuffer(final byte[] buffer) throws IOException {

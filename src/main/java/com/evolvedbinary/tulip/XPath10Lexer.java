@@ -30,17 +30,26 @@ public class XPath10Lexer extends AbstractLexer {
 
         TokenType tokenType = null;
 
-        if (xmlSpecification.isWhiteSpace(b)) {
+        while (xmlSpecification.isWhiteSpace(b)) {
             // XML white-space
-
-        } else if (isDigit(b)) {
+            readNextChar();
+            b = currentBuffer[forward];
+            lexemeBegin = forward;
+            continue;
+        }
+        if (isDigit(b)) {
             // IntegerLiteral or (DecimalLiteral or Double Literal) starting with a digit
-
+            // consumeNumber
+            while(isDigit(peekNextChar())) {
+                readNextChar();
+            }
+            tokenType = TokenType.LITERAL;
         } else if (b == FULL_STOP) {
             // Decimal Literal or Double Literal starting with a '.'
 
         } else if (b == QUOTATION_MARK || b == APOSTROPHE) {
             // Literal
+            // consume string literal
             readLiteral(b);
             tokenType = TokenType.LITERAL;
 
@@ -53,7 +62,8 @@ public class XPath10Lexer extends AbstractLexer {
         token.tokenType = tokenType;
         token.lexemeBegin = lexemeBegin;
         token.lexemeEnd = forward;
-        token.buffer = currentBuffer;
+        token.buffer = currentBuffer; // Doubt - What if the lexeme begin and lexeme end lie in different buffers since we are using a two buffer scheme
+        lexemeBegin = forward + 1;
         // TODO(AR) set line number, column number
         return token;
     }
