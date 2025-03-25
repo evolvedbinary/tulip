@@ -19,6 +19,8 @@ import org.jspecify.annotations.Nullable;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Base class for a lexer.
@@ -26,28 +28,43 @@ import java.util.Deque;
 abstract class AbstractLexer implements Lexer {
 
     private final Source source;
+
+
+
     private final int bufferSize;
     @Nullable protected byte[] buffer1;
     @Nullable protected byte[] buffer2;
 
-    @Nullable byte[] currentBuffer;
-    @Nullable protected int currentBufferLength = 0;
+    @Nullable byte[] forwardBuffer;
+    @Nullable byte[] beginBuffer;
 
     protected final XmlSpecification xmlSpecification;
 
     int lexemeBegin = 0;
     int forward = -1;
+    private int lexemeBeginOriginal = 0;
+    private int forwardOriginal = -1;
+    private int beginOffset = 0;
+    private int forwardOffset = 0;
+
 
     private final Deque<Token> freeTokens = new ArrayDeque<>();
+    ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     /**
      * @param source the source to read from.
      * @param bufferSize the size of the buffer to use for reading. The lexer will potentially allocate two of these.
      */
-    protected AbstractLexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) {
+    protected AbstractLexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) throws IOException {
         this.source = source;
         this.bufferSize = bufferSize;
         this.xmlSpecification = xmlSpecification;
+        buffer1 = new byte[bufferSize];
+        buffer2 = new byte[bufferSize];
+        loadBuffer(buffer1);
+        loadBuffer(buffer2);
+        beginBuffer = buffer1;
+        forwardBuffer = buffer1;
     }
 
     /**
@@ -63,47 +80,75 @@ abstract class AbstractLexer implements Lexer {
      * @param count the number of characters to try and advance the forward pointer.
      */
     protected void readNextChars(final int count) throws IOException {
-        if (forward + count > currentBufferLength) {
-            if (buffer1 == null) {
-                // Buffer1 is empty so read into it and set it as the current buffer
-                buffer1 = new byte[bufferSize];
-                currentBufferLength = loadBuffer(buffer1);
-                currentBuffer = buffer1;
-                if (currentBufferLength > forward + count) {
-                    forward += count;
-                    return;
-                }
-            }
+        incrementForwardPointer(count);
+    }
 
-            if (buffer2 == null) {
-                // Buffer1 is not empty, but Buffer2 is so read into it set it as the current buffer
-                buffer2 = new byte[bufferSize];
-                currentBufferLength = loadBuffer(buffer2);
-                currentBuffer = buffer2;
-                if (buffer1.length + currentBufferLength > forward + count) {
-                    forward += count;
-                    return;
-                }
-            }
-
-            throw new IOException("Out of buffer space");
+    private void incrementForwardPointer(int count) {
+        if(forward+count>=bufferSize) {
+            forwardOffset += bufferSize;
+            switchForwardBuffer();
         }
+        forwardOriginal += count;
+        forward = forwardOriginal - forwardOffset;
+    }
 
-        forward += count;
-    } // Doubt - When do we reset our buffers? Wouldn't this throw an error once more than 2*buffersize characters have been read?
-
-    protected byte peekNextChar() {
-        if(currentBufferLength+1>forward+1) {
-            return currentBuffer[forward+1];
+    private void switchForwardBuffer() {
+        if(forwardBuffer==buffer1) {
+            forwardBuffer = buffer2;
         } else {
-            return ZERO;// Doubt - Is there any way to read the next char without moving ahead the forward pointer?
+            forwardBuffer = buffer1;
         }
     }
 
-    private int loadBuffer(final byte[] buffer) throws IOException {
-        return source.read(buffer);
+    private void incrementBeginPointer(int count) throws IOException {
+        if(lexemeBegin+count>=bufferSize) {
+            beginOffset += bufferSize;
+            switchBeginBuffer();
+        }
+        lexemeBeginOriginal += count;
+        lexemeBegin = lexemeBeginOriginal - beginOffset;
     }
 
+    void resetLexemeBegin() throws IOException {
+        if(forwardOffset>beginOffset) {
+            switchBeginBuffer();
+            beginOffset = forwardOffset;
+        }
+        lexemeBeginOriginal = forwardOriginal;
+        lexemeBegin = lexemeBeginOriginal - beginOffset;
+    }
+
+    private void switchBeginBuffer() throws IOException {
+        if(beginBuffer==buffer1) {
+            beginBuffer=buffer2;
+            loadBuffer(buffer1);
+        } else {
+            beginBuffer=buffer1;
+            loadBuffer(buffer2);
+        }
+    }
+
+    private void loadBuffer(final byte[] buffer) throws IOException {
+        source.read(buffer);
+    }
+
+    public String getCurrentLexeme() {
+        byte[] str = new byte[forwardOriginal - lexemeBeginOriginal + 1];
+        if(beginOffset == forwardOffset) {
+            for(int i=lexemeBegin;i<=forward;i++) {
+                str[i-lexemeBegin] = forwardBuffer[i];
+            }
+        } else {
+            int count = 0;
+            for(int i=lexemeBegin;i<bufferSize;i++) {
+                str[count++] = beginBuffer[i];
+            }
+            for(int i=0;i<=forward;i++) {
+                str[count++] = forwardBuffer[i];
+            }
+        }
+        return new String(str);
+    }
     @Override
     public void close() {
         freeTokens.clear();
@@ -116,7 +161,7 @@ abstract class AbstractLexer implements Lexer {
      */
     protected Token getFreeToken() {
         @Nullable Token freeToken = freeTokens.peek();
-        if (freeToken != null) {
+        if (freeToken == null) {
             freeToken = new Token(this);
         }
         return freeToken;
@@ -129,6 +174,10 @@ abstract class AbstractLexer implements Lexer {
      */
     void reuseToken(final Token freeToken) {
         freeTokens.push(freeToken);
+    }
+
+    public int getBufferSize() {
+        return bufferSize;
     }
 
     protected static final byte QUOTATION_MARK = 0x22;

@@ -18,7 +18,7 @@ import java.io.IOException;
 
 public class XPath10Lexer extends AbstractLexer {
 
-    protected XPath10Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) {
+    protected XPath10Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) throws IOException {
         super(source, bufferSize, xmlSpecification);
     }
 
@@ -26,23 +26,20 @@ public class XPath10Lexer extends AbstractLexer {
     public Token next() throws IOException {
 
         readNextChar();
-        final byte b = currentBuffer[forward];
+        byte b = forwardBuffer[forward];
 
         TokenType tokenType = null;
 
         while (xmlSpecification.isWhiteSpace(b)) {
             // XML white-space
             readNextChar();
-            b = currentBuffer[forward];
-            lexemeBegin = forward;
+            b = forwardBuffer[forward];
+            resetLexemeBegin();
             continue;
         }
         if (isDigit(b)) {
             // IntegerLiteral or (DecimalLiteral or Double Literal) starting with a digit
             // consumeNumber
-            while(isDigit(peekNextChar())) {
-                readNextChar();
-            }
             tokenType = TokenType.LITERAL;
         } else if (b == FULL_STOP) {
             // Decimal Literal or Double Literal starting with a '.'
@@ -60,11 +57,9 @@ public class XPath10Lexer extends AbstractLexer {
 
         final Token token = getFreeToken();
         token.tokenType = tokenType;
-        token.lexemeBegin = lexemeBegin;
-        token.lexemeEnd = forward;
-        token.buffer = currentBuffer; // Doubt - What if the lexeme begin and lexeme end lie in different buffers since we are using a two buffer scheme
-        lexemeBegin = forward + 1;
         // TODO(AR) set line number, column number
+        token.lexeme = getCurrentLexeme();
+        resetLexemeBegin();
         return token;
     }
 
@@ -80,7 +75,7 @@ public class XPath10Lexer extends AbstractLexer {
         // read chars until we find one that matches the startChar
         do {
             readNextChar();
-        } while (currentBuffer[forward] != startChar);
+        } while (forwardBuffer[forward] != startChar);
     }
 
     /**
