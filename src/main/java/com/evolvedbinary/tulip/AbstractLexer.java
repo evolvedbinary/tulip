@@ -74,6 +74,16 @@ abstract class AbstractLexer implements Lexer {
         readNextChars(1);
     }
 
+    public void decrementForward() {
+        forward--;
+        forwardOriginal--;
+    }
+
+    public void decrementBegin() {
+        lexemeBegin--;
+        lexemeBeginOriginal--;
+    }
+
     /**
      * Advance the forward pointer by a number of characters.
      *
@@ -114,7 +124,7 @@ abstract class AbstractLexer implements Lexer {
             switchBeginBuffer();
             beginOffset = forwardOffset;
         }
-        lexemeBeginOriginal = forwardOriginal;
+        lexemeBeginOriginal = forwardOriginal + 1;
         lexemeBegin = lexemeBeginOriginal - beginOffset;
     }
 

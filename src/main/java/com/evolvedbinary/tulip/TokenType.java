@@ -15,5 +15,7 @@
 package com.evolvedbinary.tulip;
 
 public enum TokenType {
-    LITERAL
+    STRING_LITERAL,
+    INTEGER_LITERAL,
+    EOF
 }

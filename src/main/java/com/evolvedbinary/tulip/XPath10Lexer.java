@@ -27,6 +27,7 @@ public class XPath10Lexer extends AbstractLexer {
 
         readNextChar();
         byte b = forwardBuffer[forward];
+        System.out.println(b);
 
         TokenType tokenType = null;
 
@@ -35,12 +36,20 @@ public class XPath10Lexer extends AbstractLexer {
             readNextChar();
             b = forwardBuffer[forward];
             resetLexemeBegin();
-            continue;
+            decrementBegin();
         }
-        if (isDigit(b)) {
+
+        if(b==117) {
+            System.out.println("Reached end of file");
+            tokenType = TokenType.EOF;
+        } else if (isDigit(b)) {
             // IntegerLiteral or (DecimalLiteral or Double Literal) starting with a digit
             // consumeNumber
-            tokenType = TokenType.LITERAL;
+            tokenType = TokenType.INTEGER_LITERAL;
+            do {
+                readNextChar();
+            }while(isDigit(forwardBuffer[forward]));
+            decrementForward(); //since last byte is not a digit
         } else if (b == FULL_STOP) {
             // Decimal Literal or Double Literal starting with a '.'
 
@@ -48,7 +57,7 @@ public class XPath10Lexer extends AbstractLexer {
             // Literal
             // consume string literal
             readLiteral(b);
-            tokenType = TokenType.LITERAL;
+            tokenType = TokenType.STRING_LITERAL;
 
         } else if (b == Q) {
             // URIQualifiedName
