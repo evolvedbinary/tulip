@@ -18,7 +18,7 @@ import java.io.IOException;
 
 public class XPath10Lexer extends AbstractLexer {
 
-    protected XPath10Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) {
+    protected XPath10Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) throws IOException {
         super(source, bufferSize, xmlSpecification);
     }
 
@@ -26,23 +26,38 @@ public class XPath10Lexer extends AbstractLexer {
     public Token next() throws IOException {
 
         readNextChar();
-        final byte b = currentBuffer[forward];
+        byte b = forwardBuffer[forward];
+        System.out.println(b);
 
         TokenType tokenType = null;
 
-        if (xmlSpecification.isWhiteSpace(b)) {
+        while (xmlSpecification.isWhiteSpace(b)) {
             // XML white-space
+            readNextChar();
+            b = forwardBuffer[forward];
+            resetLexemeBegin();
+            decrementBegin();
+        }
 
+        if(b==117) {
+            System.out.println("Reached end of file");
+            tokenType = TokenType.EOF;
         } else if (isDigit(b)) {
             // IntegerLiteral or (DecimalLiteral or Double Literal) starting with a digit
-
+            // consumeNumber
+            tokenType = TokenType.INTEGER_LITERAL;
+            do {
+                readNextChar();
+            }while(isDigit(forwardBuffer[forward]));
+            decrementForward(); //since last byte is not a digit
         } else if (b == FULL_STOP) {
             // Decimal Literal or Double Literal starting with a '.'
 
         } else if (b == QUOTATION_MARK || b == APOSTROPHE) {
             // Literal
+            // consume string literal
             readLiteral(b);
-            tokenType = TokenType.LITERAL;
+            tokenType = TokenType.STRING_LITERAL;
 
         } else if (b == Q) {
             // URIQualifiedName
@@ -51,10 +66,9 @@ public class XPath10Lexer extends AbstractLexer {
 
         final Token token = getFreeToken();
         token.tokenType = tokenType;
-        token.lexemeBegin = lexemeBegin;
-        token.lexemeEnd = forward;
-        token.buffer = currentBuffer;
         // TODO(AR) set line number, column number
+        token.lexeme = getCurrentLexeme();
+        resetLexemeBegin();
         return token;
     }
 
@@ -70,7 +84,7 @@ public class XPath10Lexer extends AbstractLexer {
         // read chars until we find one that matches the startChar
         do {
             readNextChar();
-        } while (currentBuffer[forward] != startChar);
+        } while (forwardBuffer[forward] != startChar);
     }
 
     /**

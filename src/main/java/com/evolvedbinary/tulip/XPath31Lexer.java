@@ -14,9 +14,11 @@
  */
 package com.evolvedbinary.tulip;
 
+import java.io.IOException;
+
 public class XPath31Lexer extends XPath30Lexer {
 
-    protected XPath31Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) {
+    protected XPath31Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) throws IOException {
         super(source, bufferSize, xmlSpecification);
     }
 
