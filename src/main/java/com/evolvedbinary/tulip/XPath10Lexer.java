@@ -36,10 +36,10 @@ public class XPath10Lexer extends AbstractLexer {
             readNextChar();
             b = forwardBuffer[forward];
             resetLexemeBegin();
-            decrementBegin();
+            decrementBegin(); //todo -> see if a better code design can replace this
         }
 
-        if(b==117) {
+        if (b == 117) {
             System.out.println("Reached end of file");
             tokenType = TokenType.EOF;
         } else if (isDigit(b)) {
@@ -48,7 +48,7 @@ public class XPath10Lexer extends AbstractLexer {
             tokenType = TokenType.INTEGER_LITERAL;
             do {
                 readNextChar();
-            }while(isDigit(forwardBuffer[forward]));
+            } while (isDigit(forwardBuffer[forward]));
             decrementForward(); //todo -> see if a better code design can replace this
         } else if (b == FULL_STOP) {
             // Decimal Literal or Double Literal starting with a '.'
@@ -64,13 +64,16 @@ public class XPath10Lexer extends AbstractLexer {
 
         }
         // TODO(AR) set line number, column number
-        try(Token token = getFreeToken()) { // doing this for not letting many token objects get created in runtime
+        try (Token token = getFreeToken()) { // doing this for not letting many token objects get created in runtime
             token.tokenType = tokenType;
-            token.lexeme = getCurrentLexeme();
+            int tokenLength = ((forward-lexemeBegin+1>0)?(forward-lexemeBegin+1):(forward-lexemeBegin+1+getBufferSize()));
+            byte[] currentToken = new byte[tokenLength];
+            populateLexeme(currentToken);
+            token.lexeme = currentToken;
             resetLexemeBegin();
             return token;
         } catch (Exception e) {
-            System.out.println("Error: "+e.getMessage());
+            System.out.println("Error: " + e.getMessage());
             return null;
         }
     }
@@ -78,7 +81,7 @@ public class XPath10Lexer extends AbstractLexer {
     /**
      * Reads a Literal.
      * {@see https://www.w3.org/TR/xpath-10/#NT-Literal}
-     *
+     * <p>
      * This state starts when a quotation mark of apostrophe was detected.
      *
      * @param startChar the starting character - either a quotation mark or apostrophe
@@ -95,7 +98,6 @@ public class XPath10Lexer extends AbstractLexer {
      * {@see https://www.w3.org/TR/xpath-10/#NT-Digits}
      *
      * @param b the character to test.
-     *
      * @return true if the character is a digit, false otherwise.
      */
     boolean isDigit(final byte b) {

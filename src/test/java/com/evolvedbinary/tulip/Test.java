@@ -21,7 +21,7 @@ public class Test {
             Token t = lexer.next();
             if(t.getTokenType()==null)
                 break;
-            String lexeme = t.getLexeme();
+            String lexeme = new String(t.getLexeme());
             System.out.println(lexeme);
             assertEquals(lexeme, testing[count++]);
         }

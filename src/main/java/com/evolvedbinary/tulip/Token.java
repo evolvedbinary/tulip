@@ -22,7 +22,7 @@ public class Token implements AutoCloseable {
     int lineNumber;
     int columnNumber;
 
-    String lexeme;
+    byte[] lexeme;
 
     Token(final AbstractLexer lexer) {
         this.lexer = lexer;
@@ -32,13 +32,10 @@ public class Token implements AutoCloseable {
         return tokenType;
     }
 
-    public String getLexeme() {
+    public byte[] getLexeme() {
         return lexeme;
     }
 
-    public String toString() {
-        return "Lexeme: " + getLexeme() + " Token type: " + getTokenType();
-    }
 
     @Override
     public void close() {

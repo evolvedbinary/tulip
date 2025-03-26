@@ -142,6 +142,22 @@ abstract class AbstractLexer implements Lexer {
         source.read(buffer);
     }
 
+    public void populateLexeme(byte[] lexeme) {
+        if(beginOffset == forwardOffset) {
+            for(int i=lexemeBegin;i<=forward;i++) {
+                lexeme[i-lexemeBegin] = forwardBuffer[i];
+            }
+        } else {
+            int count = 0;
+            for(int i=lexemeBegin;i<bufferSize;i++) {
+                lexeme[count++] = beginBuffer[i];
+            }
+            for(int i=0;i<=forward;i++) {
+                lexeme[count++] = forwardBuffer[i];
+            }
+        }
+    }
+
     public String getCurrentLexeme() {
         byte[] str = new byte[forwardOriginal - lexemeBeginOriginal + 1];
         if(beginOffset == forwardOffset) {
