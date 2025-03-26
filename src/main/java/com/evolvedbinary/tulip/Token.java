@@ -46,6 +46,7 @@ public class Token implements AutoCloseable {
     }
 
     private void releaseToken() {
+//        System.out.println("Releasing one of the used tokens for future use");
         lexer.reuseToken(this);
     }
 }

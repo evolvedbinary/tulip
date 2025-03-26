@@ -27,7 +27,7 @@ public class XPath10Lexer extends AbstractLexer {
 
         readNextChar();
         byte b = forwardBuffer[forward];
-        System.out.println(b);
+//        System.out.println(b);
 
         TokenType tokenType = null;
 
@@ -49,7 +49,7 @@ public class XPath10Lexer extends AbstractLexer {
             do {
                 readNextChar();
             }while(isDigit(forwardBuffer[forward]));
-            decrementForward(); //since last byte is not a digit
+            decrementForward(); //todo -> see if a better code design can replace this
         } else if (b == FULL_STOP) {
             // Decimal Literal or Double Literal starting with a '.'
 
@@ -63,13 +63,16 @@ public class XPath10Lexer extends AbstractLexer {
             // URIQualifiedName
 
         }
-
-        final Token token = getFreeToken();
-        token.tokenType = tokenType;
         // TODO(AR) set line number, column number
-        token.lexeme = getCurrentLexeme();
-        resetLexemeBegin();
-        return token;
+        try(Token token = getFreeToken()) { // doing this for not letting many token objects get created in runtime
+            token.tokenType = tokenType;
+            token.lexeme = getCurrentLexeme();
+            resetLexemeBegin();
+            return token;
+        } catch (Exception e) {
+            System.out.println("Error: "+e.getMessage());
+            return null;
+        }
     }
 
     /**

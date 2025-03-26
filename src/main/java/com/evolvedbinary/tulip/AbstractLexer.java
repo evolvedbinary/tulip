@@ -172,6 +172,7 @@ abstract class AbstractLexer implements Lexer {
     protected Token getFreeToken() {
         @Nullable Token freeToken = freeTokens.peek();
         if (freeToken == null) {
+            System.out.println("New token created");
             freeToken = new Token(this);
         }
         return freeToken;
