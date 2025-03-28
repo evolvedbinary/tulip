@@ -22,6 +22,8 @@ import java.util.Deque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.evolvedbinary.tulip.LexerConstants.BUFFER_SIZE;
+
 /**
  * Base class for a lexer.
  */
@@ -139,7 +141,10 @@ abstract class AbstractLexer implements Lexer {
     }
 
     private void loadBuffer(final byte[] buffer) throws IOException {
-        source.read(buffer);
+        int bytesRead = source.read(buffer);
+        if(bytesRead!=BUFFER_SIZE && bytesRead>=0) {
+            buffer[bytesRead] = -1;
+        }
     }
 
     public void populateLexeme(byte[] lexeme) {

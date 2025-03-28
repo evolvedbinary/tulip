@@ -26,7 +26,7 @@ public class LexerTest {
         Instant start = Instant.now();
         while(true) {
             Token t = lexer.next();
-            if(t.getTokenType()==null)
+            if(t.getTokenType()==TokenType.EOF)
                 break;
             String lexeme = new String(t.getLexeme());
             //Comment the next two lines when checking for time spent to tokenise
