@@ -77,7 +77,6 @@ public class XPath10Lexer extends AbstractLexer {
      */
     @Override
     public Token next() throws IOException {
-        System.out.println("Next has been called by parser");
         resetLexemeBegin(); // Begin to be set ahead of forward
         skipWhitespaceAndResetBegin();
 

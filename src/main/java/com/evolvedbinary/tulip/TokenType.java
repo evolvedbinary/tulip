@@ -43,5 +43,13 @@ public enum TokenType {
     PARENT_AXIS,
     AXIS_SEPARATOR,
     IDENTIFIER,
+    AND,
+    OR,
+    DIV,
+    MOD,
+    NODE_TYPE,
+    TEXT_NODE,
+    COMMENT_NODE,
+    PROCESSING_INSTRUCTION,
     EOF
 }

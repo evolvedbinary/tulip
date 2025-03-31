@@ -1,1 +1,1 @@
-descendant::book[starts-with(translate(title, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'x')]//ancestor-or-self::library[position() < last()]
+ "double" 'single' "" '' "it's" '"quote"' 
