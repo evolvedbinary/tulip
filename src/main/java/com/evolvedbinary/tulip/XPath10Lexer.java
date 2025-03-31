@@ -31,7 +31,7 @@ public class XPath10Lexer extends AbstractLexer {
                 "preceding", "preceding-sibling", "self"
         );
         for (String axis : axisNames) {
-            trie.insert(axis, false); // isFunction = false
+            trie.insert(axis, false, true);
         }
 
         // --- Function Names ---
@@ -49,7 +49,15 @@ public class XPath10Lexer extends AbstractLexer {
                 "number", "sum", "floor", "ceiling", "round"
         );
         for (String function : functionNames) {
-            trie.insert(function, true); // isFunction = true
+            trie.insert(function, true, false);
+        }
+
+        // --- Arithmetic Operator Names ---
+        List<String> arithmeticOperatorNames = Arrays.asList(
+                "and", "or", "div", "mod"
+        );
+        for (String op : arithmeticOperatorNames) {
+            trie.insert(op, false, false);
         }
 
         // System.out.println("Trie has been created and populated"); // Keep commented out or remove for production
@@ -88,11 +96,15 @@ public class XPath10Lexer extends AbstractLexer {
             tokenType = TokenType.EOF;
         } else if (isLetter(firstByte)) {
             tokenType = handleIdentifierOrKeyword();
+        } else if (firstByte == UNDERSCORE) {
+            tokenType = handleIdentifierStartingWithUnderscore();
         } else if (isDigit(firstByte)) {
             tokenType = handleNumberStartingWithDigit();
         } else if (firstByte == FULL_STOP) {
             tokenType = handleDotOrNumberStartingWithDot();
-        } else if (firstByte == QUOTATION_MARK || firstByte == APOSTROPHE) {
+        } else if(firstByte == MINUS) {
+            tokenType = handleNegativeNumbers();
+        }else if (firstByte == QUOTATION_MARK || firstByte == APOSTROPHE) {
             tokenType = handleLiteral(firstByte);
         } else {
             // Handle operators and punctuation
@@ -145,7 +157,7 @@ public class XPath10Lexer extends AbstractLexer {
      * Handles tokens starting with a letter, which could be an identifier,
      * an axis name, or a function name. Uses the Trie for keyword detection.
      *
-     * @return The determined TokenType (IDENTIFIER, AXIS_NAME, or FUNCTION).
+     * @return The determined TokenType (IDENTIFIER, AXIS_NAME, or FUNCTION,or Arithmetic Keyword).
      * @throws IOException If an I/O error occurs.
      */
     private TokenType handleIdentifierOrKeyword() throws IOException {
@@ -156,27 +168,10 @@ public class XPath10Lexer extends AbstractLexer {
             readNextChar();
             byte currentByte = forwardBuffer[forward];
 
-            if (isLetter(currentByte)) {
-                // Continue traversing if it's a letter
+            if (isLetter(currentByte) || currentByte == MINUS || currentByte == FULL_STOP || isDigit(currentByte)) {
+                // Continue traversing if it's a letter or could be an identifier
                 if (node != null) {
                     node = keywordTrie.traverse(currentByte, node);
-                }
-            } else if (currentByte == MINUS) {
-                // Handle potential hyphen in keywords (e.g., "ancestor-or-self")
-                if (node != null) {
-                    node = keywordTrie.traverse(currentByte, node);
-                }
-                // Look ahead: must be followed by a letter for valid keyword hyphen
-                readNextChar();
-                byte nextByte = forwardBuffer[forward];
-                if (isLetter(nextByte)) {
-                    if (node != null) {
-                        node = keywordTrie.traverse(nextByte, node);
-                    }
-                } else {
-                    // Hyphen not followed by letter, backtrack and break
-                    decrementForward(); // Backtrack past the non-letter
-                    break;
                 }
             } else {
                 // Not a letter or valid hyphen sequence, end of potential identifier/keyword
@@ -185,10 +180,38 @@ public class XPath10Lexer extends AbstractLexer {
         }
         decrementForward(); // Backtrack to the last token
         // Determine token type based on final Trie node state
-        if (node != null && node.isKeyword) {
-            return node.isFunction ? TokenType.FUNCTION : TokenType.AXIS_NAME;
+        if (node != null && node.isFunction) {
+            return TokenType.FUNCTION;
+        } else if(node != null && node.isAxis) {
+            return TokenType.AXIS_NAME;
+        } else if(node != null && node.isKeyword) {
+            if(beginBuffer[lexemeBegin] == 0x61) {
+                return TokenType.AND;
+            } else if(beginBuffer[lexemeBegin] == 0x6F) {
+                return TokenType.OR;
+            } else if(beginBuffer[lexemeBegin] == 0x64) {
+                return TokenType.DIV;
+            } else {
+                return TokenType.MOD;
+            }
         } else {
             return TokenType.IDENTIFIER; // Matched prefix or not a keyword
+        }
+    }
+
+    /**
+     * Handles tokens starting with a underscore, which could be an identifier,
+     * calls upon handleIdentifierOrKeyword() after reading underscore
+     *
+     * @return The determined TokenType (IDENTIFIER, AXIS_NAME, or FUNCTION, or Arithmetic Keyword).
+     * @throws IOException If an I/O error occurs.
+     */
+    private TokenType handleIdentifierStartingWithUnderscore() throws IOException {
+        readNextChar();
+        if (isLetter(forwardBuffer[forward])) {
+            return handleIdentifierOrKeyword();
+        } else {
+            throw new IOException("Underscore should be followed by a letter for it to be identified as a proper identifier in XPath 1.0");
         }
     }
 
@@ -210,8 +233,12 @@ public class XPath10Lexer extends AbstractLexer {
             tokenType = TokenType.NUMBER; // If dot is present then TokenType is NUMBER
             readNextChar(); // Consume the dot
             // Consume digits after the dot
-            while (isDigit(forwardBuffer[forward])) {
-                readNextChar();
+            if(isDigit(forwardBuffer[forward])) {
+                while (isDigit(forwardBuffer[forward])) {
+                    readNextChar();
+                }
+            } else {
+                decrementForward();
             }
         }
 
@@ -246,6 +273,16 @@ public class XPath10Lexer extends AbstractLexer {
             decrementForward(); // Backtrack as we only consumed the first dot
             return TokenType.CURRENT_AXIS;
         }
+    }
+
+    /**
+     * Handles tokens starting with a minus, which could be a number or digit,
+     *
+     * @return The determined TokenType (MINUS).
+     * @throws IOException If an I/O error occurs.
+     */
+    private TokenType handleNegativeNumbers() throws IOException {
+        return TokenType.MINUS;
     }
 
     /**
@@ -336,8 +373,9 @@ public class XPath10Lexer extends AbstractLexer {
                 if (forwardBuffer[forward] == COLON) {
                     return TokenType.AXIS_SEPARATOR; // '::'
                 } else {
-                    // According to original code, only '::' is supported.
-                    throw new IOException("Invalid character sequence: ':' must be followed by another ':' in XPath 1.0 for the axis separator '::'.");
+                    // Backtrack and return forward
+                    decrementForward();
+                    return TokenType.COLON;
                 }
             default:
                 // If none of the known characters match, it's an unexpected character.

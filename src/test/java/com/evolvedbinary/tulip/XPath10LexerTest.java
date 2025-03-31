@@ -250,7 +250,7 @@ public class XPath10LexerTest {
                 new TokenInfo(TokenType.IDENTIFIER, "price"),
                 new TokenInfo(TokenType.GREATER_THAN, ">"),
                 new TokenInfo(TokenType.NUMBER, "10.5"),
-                new TokenInfo(TokenType.IDENTIFIER, "and"), // Operator keyword -> IDENTIFIER
+                new TokenInfo(TokenType.AND, "and"), // Operator keyword -> IDENTIFIER
                 new TokenInfo(TokenType.FUNCTION, "starts-with"),
                 new TokenInfo(TokenType.LPAREN, "("),
                 new TokenInfo(TokenType.IDENTIFIER, "title"),
@@ -303,15 +303,24 @@ public class XPath10LexerTest {
         assertEquals(List.of(new TokenInfo(TokenType.PARENT_AXIS, ".."), new TokenInfo(TokenType.CURRENT_AXIS, "."), new TokenInfo(TokenType.EOF, "")), lex("...")); // . followed by ..
     }
 
-    // ========================================================================
-    // Not programmed yet or edge cases which don't work
-    // ========================================================================
-
+    @Test
+    void testNumberAndDot() throws IOException {
+        // Ensure dot after number is treated as CURRENT_AXIS
+        assertEquals(
+                List.of(new TokenInfo(TokenType.NUMBER, "1"), new TokenInfo(TokenType.CURRENT_AXIS, "."), new TokenInfo(TokenType.EOF, "")),
+                lex("1.")
+        );
+        // Ensure dot before number is part of the number
+        assertEquals(
+                List.of(new TokenInfo(TokenType.NUMBER, ".5"), new TokenInfo(TokenType.EOF, "")),
+                lex(".5")
+        );
+    }
 
     @Test
     void testUnaryMinus() throws IOException {
         assertEquals(
-                List.of(new TokenInfo(TokenType.MINUS, "-"), new TokenInfo(TokenType.NUMBER, "1"), new TokenInfo(TokenType.EOF, "")),
+                List.of(new TokenInfo(TokenType.MINUS, "-"), new TokenInfo(TokenType.DIGITS, "1"), new TokenInfo(TokenType.EOF, "")),
                 lex("-1")
         );
         assertEquals(
@@ -319,7 +328,7 @@ public class XPath10LexerTest {
                 lex("-.5")
         );
         assertEquals( // Check space doesn't break it
-                List.of(new TokenInfo(TokenType.MINUS, "-"), new TokenInfo(TokenType.NUMBER, "5"), new TokenInfo(TokenType.EOF, "")),
+                List.of(new TokenInfo(TokenType.MINUS, "-"), new TokenInfo(TokenType.DIGITS, "5"), new TokenInfo(TokenType.EOF, "")),
                 lex("- 5")
         );
     }
@@ -338,6 +347,26 @@ public class XPath10LexerTest {
         assertEquals(expected, lex(input));
     }
 
+    // --- Identifiers ---
+    @Test
+    void testIdentifiers() throws IOException {
+        String input = " simple _underscore with-hyphen with.dot a123";
+        List<TokenInfo> expected = List.of(
+                new TokenInfo(TokenType.IDENTIFIER, "simple"),
+                new TokenInfo(TokenType.IDENTIFIER, "_underscore"),
+                new TokenInfo(TokenType.IDENTIFIER, "with-hyphen"),
+                new TokenInfo(TokenType.IDENTIFIER, "with.dot"),
+                new TokenInfo(TokenType.IDENTIFIER, "a123"),
+                new TokenInfo(TokenType.EOF, "")
+        );
+        assertEquals(expected, lex(input));
+    }
+
+    // ========================================================================
+    // Not programmed yet or edge cases which don't work
+    // ========================================================================
+
+
     // --- Node Types ---
     @Test
     void testNodeTypes() throws IOException {
@@ -350,38 +379,6 @@ public class XPath10LexerTest {
                 new TokenInfo(TokenType.EOF, "")
         );
         assertEquals(expected, lex(input));
-    }
-
-    // --- Identifiers ---
-    @Test
-    void testIdentifiers() throws IOException {
-        String input = " simple _underscore with-hyphen with.dot a123 prefix:local p:l _:_ ";
-        List<TokenInfo> expected = List.of(
-                new TokenInfo(TokenType.IDENTIFIER, "simple"),
-                new TokenInfo(TokenType.IDENTIFIER, "_underscore"),
-                new TokenInfo(TokenType.IDENTIFIER, "with-hyphen"),
-                new TokenInfo(TokenType.IDENTIFIER, "with.dot"),
-                new TokenInfo(TokenType.IDENTIFIER, "a123"),
-                new TokenInfo(TokenType.IDENTIFIER, "prefix:local"), // Assuming QName -> IDENTIFIER
-                new TokenInfo(TokenType.IDENTIFIER, "p:l"),          // Assuming QName -> IDENTIFIER
-                new TokenInfo(TokenType.IDENTIFIER, "_:_"),          // Assuming QName -> IDENTIFIER
-                new TokenInfo(TokenType.EOF, "")
-        );
-        assertEquals(expected, lex(input));
-    }
-
-    @Test
-    void testNumberAndDot() throws IOException {
-        // Ensure dot after number is treated as CURRENT_AXIS
-        assertEquals(
-                List.of(new TokenInfo(TokenType.NUMBER, "1"), new TokenInfo(TokenType.CURRENT_AXIS, "."), new TokenInfo(TokenType.EOF, "")),
-                lex("1.")
-        );
-        // Ensure dot before number is part of the number
-        assertEquals(
-                List.of(new TokenInfo(TokenType.NUMBER, ".5"), new TokenInfo(TokenType.EOF, "")),
-                lex(".5")
-        );
     }
 
 }

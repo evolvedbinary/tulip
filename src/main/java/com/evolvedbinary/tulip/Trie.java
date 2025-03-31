@@ -4,7 +4,7 @@ class Trie {
     private final TrieNode root = new TrieNode();
 
 
-    public void insert(String word, boolean isFunction) {
+    public void insert(String word, boolean isFunction, boolean isAxis) {
         TrieNode node = root;
         for (byte b : word.getBytes()) { // Convert to byte array
             node.children.putIfAbsent(b, new TrieNode());
@@ -12,9 +12,9 @@ class Trie {
         }
         if(isFunction) {
             node.isFunction = true;
-            node.isKeyword = true;
-        } else {
+        } else if(isAxis) {
             node.isAxis = true;
+        } else {
             node.isKeyword = true;
         }
     }

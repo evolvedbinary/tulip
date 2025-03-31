@@ -347,6 +347,7 @@ abstract class AbstractLexer implements Lexer {
     // Arithmetic Operators
     protected static final byte PLUS        = 0x2B; // '+'
     protected static final byte MINUS       = 0x2D; // '-'
+    protected static final byte UNDERSCORE       = 0x5F; // '-'
     protected static final byte MULTIPLY_OPERATOR    = 0x2A; // '*'
 
     // Comparison Operators

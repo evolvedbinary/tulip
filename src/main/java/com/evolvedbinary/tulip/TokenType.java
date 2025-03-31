@@ -20,7 +20,6 @@ public enum TokenType {
     FUNCTION,
     DIGITS,
     NUMBER,
-    OPERATOR,
     SLASH,
     DOUBLE_SLASH,
     UNION_OPERATOR,
@@ -51,5 +50,6 @@ public enum TokenType {
     TEXT_NODE,
     COMMENT_NODE,
     PROCESSING_INSTRUCTION,
+    COLON,
     EOF
 }
