@@ -46,8 +46,8 @@ abstract class AbstractLexer implements Lexer {
     int forward = -1;
     private int lexemeBeginOriginal = 0;
     private int forwardOriginal = -1;
-    private int beginOffset = 0;
-    private int forwardOffset = 0;
+    int beginOffset = 0;
+    int forwardOffset = 0;
 
 
     private final Deque<Token> freeTokens = new ArrayDeque<>();
@@ -96,7 +96,7 @@ abstract class AbstractLexer implements Lexer {
     }
 
     private void incrementForwardPointer(int count) {
-        if(forward+count>=bufferSize) {
+        if(forward+count >= bufferSize) {
             forwardOffset += bufferSize;
             switchForwardBuffer();
         }
@@ -105,6 +105,7 @@ abstract class AbstractLexer implements Lexer {
     }
 
     private void switchForwardBuffer() {
+//        System.out.println("Switch buffers - descarding begin buffer which was: "+ new String(beginBuffer));
         if(forwardBuffer==buffer1) {
             forwardBuffer = buffer2;
         } else {
@@ -134,9 +135,11 @@ abstract class AbstractLexer implements Lexer {
         if(beginBuffer==buffer1) {
             beginBuffer=buffer2;
             loadBuffer(buffer1);
+//            System.out.println("New buffer has been loaded: " + new String(buffer1));
         } else {
             beginBuffer=buffer1;
             loadBuffer(buffer2);
+//            System.out.println("New buffer has been loaded: " + new String(buffer2));
         }
     }
 
@@ -193,7 +196,7 @@ abstract class AbstractLexer implements Lexer {
     protected Token getFreeToken() {
         @Nullable Token freeToken = freeTokens.peek();
         if (freeToken == null) {
-            System.out.println("New token created");
+//            System.out.println("New token created");
             freeToken = new Token(this);
         }
         return freeToken;

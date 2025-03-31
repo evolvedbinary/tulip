@@ -28,7 +28,7 @@ public class LexerTest {
             Token t = lexer.next();
             if(t.getTokenType()==TokenType.EOF)
                 break;
-            String lexeme = new String(t.getLexeme());
+            String lexeme = t.getLexeme();
             //Comment the next two lines when checking for time spent to tokenise
             System.out.println(lexeme + "\t\t\t\t\t\t\t" + t.getTokenType());
 //            assertEquals(lexeme, testing[count++]);
