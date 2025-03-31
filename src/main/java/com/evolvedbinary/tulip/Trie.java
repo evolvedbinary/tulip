@@ -12,8 +12,10 @@ class Trie {
         }
         if(isFunction) {
             node.isFunction = true;
+            node.isKeyword = true;
         } else {
             node.isAxis = true;
+            node.isKeyword = true;
         }
     }
 
