@@ -12,17 +12,17 @@
  *
  * Additional Use Grant: None
  */
-package com.evolvedbinary.tulip;
+package com.evolvedbinary.tulip.lexer;
 
+import com.evolvedbinary.tulip.source.Source;
+import com.evolvedbinary.tulip.spec.XmlSpecification;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import static com.evolvedbinary.tulip.LexerConstants.BUFFER_SIZE;
+import static com.evolvedbinary.tulip.constants.LexerConstants.BUFFER_SIZE;
 
 /**
  * Base class for a lexer.
@@ -158,7 +158,6 @@ abstract class AbstractLexer implements Lexer {
      * Assumes the other buffer was pre-loaded by `switchBeginBuffer`.
      */
     private void switchForwardBuffer() {
-//        System.out.println("Switch buffers - descarding begin buffer which was: "+ new String(beginBuffer));
         if(forwardBuffer==buffer1) {
             forwardBuffer = buffer2;
         } else {
@@ -293,7 +292,6 @@ abstract class AbstractLexer implements Lexer {
      * @return The String representation of the current lexeme.
      */
     public String getCurrentLexeme() {
-        // Assuming default charset is acceptable. For specific encoding, use new String(bytes, Charset).
         return new String(getCurrentLexemeBytes());
     }
 

@@ -12,29 +12,23 @@
  *
  * Additional Use Grant: None
  */
-package com.evolvedbinary.tulip;
+package com.evolvedbinary.tulip.lexer;
+
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.io.IOException;
 
-/**
- * A source to read unparsed text from.
- */
-public interface Source extends Closeable {
+public interface Lexer extends Closeable {
+
 
     /**
-     * Get an identifier for this source.
+     * Read the next token.
      *
-     * @return an identifier for this source.
+     * @return the next token, or null if we have reached the end of the source.
      */
-    String getIdentifier();
+    @Nullable Token next() throws IOException;
 
-    /**
-     * Reads data from the source into the provided buffer.
-     *
-     * @param buffer the buffer to read data into.
-     *
-     * @return the number of bytes read into the buffer.
-     */
-    int read(byte[] buffer) throws IOException;
+    @Override
+    void close();
 }

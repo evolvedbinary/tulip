@@ -1,4 +1,9 @@
-package com.evolvedbinary.tulip;
+package com.evolvedbinary.tulip.lexer;
+
+import com.evolvedbinary.tulip.source.Source;
+import com.evolvedbinary.tulip.spec.XmlSpecification;
+import com.evolvedbinary.tulip.trie.Trie;
+import com.evolvedbinary.tulip.trie.TrieNode;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -72,7 +77,7 @@ public class XPath10Lexer extends AbstractLexer {
      * @param xmlSpecification The XML specification rules (e.g., for whitespace).
      * @throws IOException If an I/O error occurs during initial read.
      */
-    protected XPath10Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) throws IOException {
+    public XPath10Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) throws IOException {
         super(source, bufferSize, xmlSpecification);
     }
 
@@ -92,7 +97,6 @@ public class XPath10Lexer extends AbstractLexer {
         TokenType tokenType;
 
         if (firstByte == -1) {
-            // System.out.println("Reached end of file"); // Keep commented out or remove
             tokenType = TokenType.EOF;
         } else if (isLetter(firstByte)) {
             tokenType = handleIdentifierOrKeyword();
@@ -120,20 +124,10 @@ public class XPath10Lexer extends AbstractLexer {
             token.lexemeBegin = lexemeBegin;
             token.beginOffset = beginOffset;
             token.forwardOffset = forwardOffset;
-            // Debugging print statements (remove or comment out for production):
-            // System.out.println("Begin buffer: " + new String(beginBuffer));
-            // System.out.println("Forward buffer: "+ new String(forwardBuffer));
-            // System.out.println("Begin pointer: " + lexemeBegin + " Forward Pointer: "+ forward);
-            // System.out.println("Token Type: " + tokenType);
             return token;
         } catch (Exception e) {
-            // This broad catch might hide issues; consider more specific exception handling if possible.
-            // Re-throwing or wrapping might be better depending on application needs.
             System.err.println("Error creating or finalizing token: " + e.getMessage());
-            // Re-throw as an IOException or a custom LexerException if appropriate
             throw new IOException("Failed to process token", e);
-            // Or return null / a special error token if the API contract allows
-            // return null;
         }
     }
 
@@ -324,7 +318,7 @@ public class XPath10Lexer extends AbstractLexer {
                 return TokenType.PLUS;
             case MINUS:
                 return TokenType.MINUS;
-            case MULTIPLY_OPERATOR: // Assuming this constant represents '*'
+            case MULTIPLY_OPERATOR:
                 return TokenType.MULTIPLY_OPERATOR;
             case EQUALS:
                 return TokenType.EQUAL_TO;
@@ -336,20 +330,17 @@ public class XPath10Lexer extends AbstractLexer {
                 return TokenType.LBRACKET;
             case RBRACKET:
                 return TokenType.RBRACKET;
-            case AT_OPERATOR: // Assuming this constant represents '@'
+            case AT_OPERATOR:
                 return TokenType.AT_OPERATOR;
             case COMMA:
                 return TokenType.COMMA;
-            case UNION_OPERATOR: // Assuming this constant represents '|'
+            case UNION_OPERATOR:
                 return TokenType.UNION_OPERATOR;
-            case NOT: // Assuming this constant represents '!'
+            case NOT:
                 readNextChar();
                 if (forwardBuffer[forward] == EQUALS) {
                     return TokenType.NOT_EQUAL_TO; // '!='
                 } else {
-                    // According to original code, only '!=' is supported.
-                    // Backtracking might be needed if '!' could be valid alone in other contexts.
-                    // decrementForward(); // If '!' were valid alone.
                     throw new IOException("Invalid character sequence: '!' must be followed by '=' in XPath 1.0 for '!=' operator.");
                 }
             case GREATER_THAN:
@@ -403,7 +394,6 @@ public class XPath10Lexer extends AbstractLexer {
      * @return True if the byte is an ASCII letter, false otherwise.
      */
     private boolean isLetter(final byte b) {
-        // Assuming LOWERCASE_A, LOWERCASE_Z, UPPERCASE_A, UPPERCASE_Z constants exist
         return (b >= LOWERCASE_A && b <= LOWERCASE_Z) || (b >= UPPERCASE_A && b <= UPPERCASE_Z);
     }
 }

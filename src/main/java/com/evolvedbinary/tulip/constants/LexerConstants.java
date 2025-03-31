@@ -1,4 +1,4 @@
-package com.evolvedbinary.tulip;
+package com.evolvedbinary.tulip.constants;
 
 public final class LexerConstants {
     private LexerConstants() {

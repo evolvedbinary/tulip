@@ -1,6 +1,6 @@
-package com.evolvedbinary.tulip;
+package com.evolvedbinary.tulip.trie;
 
-class Trie {
+public class Trie {
     private final TrieNode root = new TrieNode();
 
 

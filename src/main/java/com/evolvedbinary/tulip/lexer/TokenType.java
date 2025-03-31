@@ -12,7 +12,7 @@
  *
  * Additional Use Grant: None
  */
-package com.evolvedbinary.tulip;
+package com.evolvedbinary.tulip.lexer;
 
 public enum TokenType {
     LITERAL,

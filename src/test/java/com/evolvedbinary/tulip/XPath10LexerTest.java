@@ -14,16 +14,17 @@
  */
 package com.evolvedbinary.tulip;
 
+import com.evolvedbinary.tulip.lexer.Token;
+import com.evolvedbinary.tulip.lexer.TokenType;
+import com.evolvedbinary.tulip.lexer.XPath10Lexer;
+import com.evolvedbinary.tulip.source.FileSource;
+import com.evolvedbinary.tulip.source.Source;
+import com.evolvedbinary.tulip.spec.XmlSpecification;
+import com.evolvedbinary.tulip.spec.XmlSpecification_1_0;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,11 +32,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.evolvedbinary.tulip.LexerConstants.BUFFER_SIZE;
+import static com.evolvedbinary.tulip.constants.LexerConstants.BUFFER_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class XPath10LexerTest {
-    private final XmlSpecification xmlSpecification = new XmlSpecification_1_0(); // Or your actual spec class
+    private final XmlSpecification xmlSpecification = new XmlSpecification_1_0();
 
     // --- Helper Record ---
     record TokenInfo(TokenType type, String lexeme) {
@@ -63,14 +64,11 @@ public class XPath10LexerTest {
 
             while (true) {
                 Token t = lexer.next();
-                // Assuming getLexeme() is reliable even if token is pooled/reused later
                 String lexeme = (t.getTokenType() == TokenType.EOF) ? "" : t.getLexeme();
                 tokens.add(new TokenInfo(t.getTokenType(), lexeme));
                 if (t.getTokenType() == TokenType.EOF) {
                     break;
                 }
-                // Note: If Token uses pooling via AutoCloseable, the try-with-resources
-                // in the original Lexer's next() handles reuse. We just consume here.
             }
         } // Source and Lexer are closed here
         System.out.println(tokens);

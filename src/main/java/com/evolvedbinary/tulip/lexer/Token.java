@@ -12,9 +12,7 @@
  *
  * Additional Use Grant: None
  */
-package com.evolvedbinary.tulip;
-
-import org.jspecify.annotations.Nullable;
+package com.evolvedbinary.tulip.lexer;
 
 public class Token implements AutoCloseable {
 
@@ -35,7 +33,7 @@ public class Token implements AutoCloseable {
         this.lexer = lexer;
     }
 
-    TokenType getTokenType() {
+    public TokenType getTokenType() {
         return tokenType;
     }
 
@@ -54,7 +52,6 @@ public class Token implements AutoCloseable {
     }
 
     private void releaseToken() {
-//        System.out.println("Releasing one of the used tokens for future use");
         lexer.reuseToken(this);
     }
 }
