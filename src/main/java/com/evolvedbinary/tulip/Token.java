@@ -14,6 +14,8 @@
  */
 package com.evolvedbinary.tulip;
 
+import org.jspecify.annotations.Nullable;
+
 public class Token implements AutoCloseable {
 
     private final AbstractLexer lexer;
@@ -22,9 +24,12 @@ public class Token implements AutoCloseable {
     int lineNumber;
     int columnNumber;
 
+    byte[] forwardBuffer;
+    byte[] beginBuffer;
+    int forward;
     int lexemeBegin;
-    int lexemeEnd;
-    byte[] buffer;
+    int beginOffset = 0;
+    int forwardOffset = 0;
 
     Token(final AbstractLexer lexer) {
         this.lexer = lexer;
@@ -34,17 +39,14 @@ public class Token implements AutoCloseable {
         return tokenType;
     }
 
-    public int getLexemeBegin() {
-        return lexemeBegin;
+    public String getLexeme() {
+        if(beginOffset == forwardOffset) {
+            return new String(forwardBuffer, lexemeBegin, forward - lexemeBegin + 1);
+        } else {
+            return (new String(beginBuffer, lexemeBegin, beginBuffer.length-lexemeBegin)).concat(new String(forwardBuffer, 0, forward+1));
+        }
     }
 
-    public int getLexemeEnd() {
-        return lexemeEnd;
-    }
-
-    public byte[] getBuffer() {
-        return buffer;
-    }
 
     @Override
     public void close() {
@@ -52,6 +54,7 @@ public class Token implements AutoCloseable {
     }
 
     private void releaseToken() {
+//        System.out.println("Releasing one of the used tokens for future use");
         lexer.reuseToken(this);
     }
 }
