@@ -30,73 +30,122 @@ import static com.evolvedbinary.tulip.LexerConstants.BUFFER_SIZE;
 abstract class AbstractLexer implements Lexer {
 
     private final Source source;
-
-
-
     private final int bufferSize;
-    @Nullable protected byte[] buffer1;
-    @Nullable protected byte[] buffer2;
-
-    @Nullable byte[] forwardBuffer;
-    @Nullable byte[] beginBuffer;
-
     protected final XmlSpecification xmlSpecification;
 
-    int lexemeBegin = 0;
-    int forward = -1;
+    // --- Buffering ---
+    // The two buffers used for reading data from the source.
+    private final byte[] buffer1;
+    private final byte[] buffer2;
+
+    // Pointers to the currently active buffers for forward scanning and lexeme beginning.
+    // These will point to either buffer1 or buffer2.
+    @Nullable // Nullable only before constructor finishes
+    protected byte[] forwardBuffer;
+    @Nullable // Nullable only before constructor finishes
+    protected byte[] beginBuffer;
+
+    // --- Pointer Management ---
+    // Pointers relative to the start of their respective buffers (forwardBuffer, beginBuffer).
+    protected int lexemeBegin = 0; // Start position of the current lexeme within beginBuffer
+    protected int forward = -1;    // Current read position within forwardBuffer
+
+    // Absolute character position from the start of the input stream.
     private int lexemeBeginOriginal = 0;
     private int forwardOriginal = -1;
+
+    // Offset of the start of the current beginBuffer/forwardBuffer from the input stream start.
     int beginOffset = 0;
     int forwardOffset = 0;
 
 
+    // --- Token Pooling ---
     private final Deque<Token> freeTokens = new ArrayDeque<>();
-    ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+
 
     /**
-     * @param source the source to read from.
-     * @param bufferSize the size of the buffer to use for reading. The lexer will potentially allocate two of these.
+     * Constructs the AbstractLexer.
+     *
+     * @param source           The source to read characters from.
+     * @param bufferSize       The size of each internal buffer. Must be large enough to hold any single token.
+     * @param xmlSpecification Rules for character classification (e.g., whitespace).
+     * @throws IOException If an error occurs during initial buffer loading.
      */
     protected AbstractLexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) throws IOException {
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("Buffer size must be positive.");
+        }
         this.source = source;
         this.bufferSize = bufferSize;
         this.xmlSpecification = xmlSpecification;
-        buffer1 = new byte[bufferSize];
-        buffer2 = new byte[bufferSize];
-        loadBuffer(buffer1);
-        loadBuffer(buffer2);
-        beginBuffer = buffer1;
-        forwardBuffer = buffer1;
+
+        // Allocate buffers
+        this.buffer1 = new byte[bufferSize];
+        this.buffer2 = new byte[bufferSize];
+
+        // Initial load and setup
+        loadBuffer(this.buffer1); // Load first chunk
+        loadBuffer(this.buffer2); // Load second chunk (lookahead)
+
+        // Initial buffer pointers
+        this.beginBuffer = this.buffer1;
+        this.forwardBuffer = this.buffer1;
+    }
+
+    // ========================================================================
+    // Pointer Advancement and Management
+    // ========================================================================
+
+    /**
+     * Advances the forward pointer one character, handling buffer switches if necessary.
+     *
+     * @throws IOException If an error occurs reading from the source.
+     */
+    protected void readNextChar() throws IOException {
+        incrementForwardPointer(1);
     }
 
     /**
-     * Advance the forward pointer one character.
+     * Advances the forward pointer by a specified number of characters.
+     * Use with caution, mainly intended for internal lookahead mechanisms.
+     *
+     * @param count The number of characters to advance.
+     * @throws IOException If an error occurs reading from the source.
      */
-    protected void readNextChar() throws IOException {
-        readNextChars(1);
+    protected void readNextChars(final int count) throws IOException {
+        if (count < 0) {
+            throw new IllegalArgumentException("Count cannot be negative.");
+        }
+        incrementForwardPointer(count);
     }
 
+    /**
+     * Decrements the forward pointer by one position. Used for backtracking after lookahead.
+     * Does not cross buffer boundaries backward (assumes lookahead is within current/next buffer).
+     */
     public void decrementForward() {
+        // TODO: Decrementing forward may push it to the begin buffer, this edge case hasn't been handled yet
         forward--;
         forwardOriginal--;
     }
 
+    /**
+     * Decrements the lexeme begin pointer by one position.
+     * Primarily used internally, e.g., during whitespace skipping setup.
+     */
     public void decrementBegin() {
         lexemeBegin--;
         lexemeBeginOriginal--;
     }
 
     /**
-     * Advance the forward pointer by a number of characters.
+     * Core logic to advance the forward pointer, handling buffer switches.
      *
-     * @param count the number of characters to try and advance the forward pointer.
+     * @param count Number of positions to advance.
      */
-    protected void readNextChars(final int count) throws IOException {
-        incrementForwardPointer(count);
-    }
-
     private void incrementForwardPointer(int count) {
-        if(forward+count >= bufferSize) {
+        if(forward+count >= bufferSize) { // Assumption being that the count wouldn't exceed the bufferSize itself
             forwardOffset += bufferSize;
             switchForwardBuffer();
         }
@@ -104,6 +153,10 @@ abstract class AbstractLexer implements Lexer {
         forward = forwardOriginal - forwardOffset;
     }
 
+    /**
+     * Switches the `forwardBuffer` to the other buffer.
+     * Assumes the other buffer was pre-loaded by `switchBeginBuffer`.
+     */
     private void switchForwardBuffer() {
 //        System.out.println("Switch buffers - descarding begin buffer which was: "+ new String(beginBuffer));
         if(forwardBuffer==buffer1) {
@@ -113,6 +166,11 @@ abstract class AbstractLexer implements Lexer {
         }
     }
 
+    /**
+     * Might have utility in future
+     *
+     * @param count Number of positions to advance.
+     */
     private void incrementBeginPointer(int count) throws IOException {
         if(lexemeBegin+count>=bufferSize) {
             beginOffset += bufferSize;
@@ -122,81 +180,142 @@ abstract class AbstractLexer implements Lexer {
         lexemeBegin = lexemeBeginOriginal - beginOffset;
     }
 
+    /**
+     * Resets the `lexemeBegin` pointer to match the position *after* the `forward` pointer.
+     * Typically called after a token is recognized or whitespace is skipped.
+     * Handles switching the `beginBuffer` and loading new data if `forward` has
+     * moved into the next buffer.
+     *
+     * @throws IOException If an error occurs loading data into the buffer.
+     */
     void resetLexemeBegin() throws IOException {
+        // If forward pointer has moved into the next buffer compared to begin pointer
         if(forwardOffset>beginOffset) {
-            switchBeginBuffer();
+            switchBeginBuffer(); // This loads data into the now inactive buffer
             beginOffset = forwardOffset;
         }
         lexemeBeginOriginal = forwardOriginal + 1;
         lexemeBegin = lexemeBeginOriginal - beginOffset;
     }
 
+    /**
+     * Switches the `beginBuffer` to the other buffer and triggers loading
+     * data into the buffer that `beginBuffer` previously pointed to.
+     *
+     * @throws IOException If an error occurs during buffer loading.
+     */
     private void switchBeginBuffer() throws IOException {
         if(beginBuffer==buffer1) {
             beginBuffer=buffer2;
             loadBuffer(buffer1);
-//            System.out.println("New buffer has been loaded: " + new String(buffer1));
         } else {
             beginBuffer=buffer1;
             loadBuffer(buffer2);
-//            System.out.println("New buffer has been loaded: " + new String(buffer2));
         }
     }
 
+    /**
+     * Loads data from the source into the specified buffer.
+     * Marks the end of the stream within the buffer using -1 if a partial read occurs.
+     *
+     * @param buffer The byte buffer to load data into.
+     * @throws IOException If an I/O error occurs reading from the source.
+     */
     private void loadBuffer(final byte[] buffer) throws IOException {
+        // TODO: Consider making this asynchronous using executorService if performance critical.
+        // Current implementation is synchronous.
+        if (source == null) {
+            throw new IllegalStateException("Source is null");
+        }
         int bytesRead = source.read(buffer);
-        if(bytesRead!=BUFFER_SIZE && bytesRead>=0) {
-            buffer[bytesRead] = -1;
+
+        if(bytesRead != BUFFER_SIZE && bytesRead>=0) {
+            buffer[bytesRead] = -1; // Use -1 to indicate EOF or end of valid data in the buffer
         }
     }
 
+    // ========================================================================
+    // Lexeme Extraction - Currently not in use
+    // ========================================================================
+
+    /**
+     * Extracts the bytes of the current lexeme (from lexemeBegin to forward).
+     * Handles cases where the lexeme spans across the two buffers.
+     *
+     * @return A byte array containing the lexeme data. Returns an empty array if pointers are invalid.
+     */
+    private byte[] getCurrentLexemeBytes() {
+        int lexemeLength = (int) (forwardOriginal - lexemeBeginOriginal + 1);
+        byte[] lexeme = new byte[lexemeLength];
+        int lexemeIndex = 0;
+
+        if (beginOffset == forwardOffset) {
+            // Lexeme is entirely within a single buffer (the current forwardBuffer/beginBuffer)
+            for (int i = lexemeBegin; i <= forward; i++) {
+                if(i >= beginBuffer.length) break;
+                lexeme[lexemeIndex++] = beginBuffer[i];
+            }
+        } else {
+            // Lexeme spans across beginBuffer and forwardBuffer
+            for (int i = lexemeBegin; i < bufferSize; i++) {
+                if (lexemeIndex >= lexemeLength) break;
+                if(i >= beginBuffer.length) break;
+                lexeme[lexemeIndex++] = beginBuffer[i];
+            }
+
+            for (int i = 0; i <= forward; i++) {
+                if (lexemeIndex >= lexemeLength) break;
+                if(i >= forwardBuffer.length) break;
+                lexeme[lexemeIndex++] = forwardBuffer[i];
+            }
+        }
+
+        return lexeme;
+    }
+
+    /**
+     * Populates a pre-allocated byte array with the current lexeme's content.
+     * Note: Caller must ensure the provided array `lexeme` is large enough.
+     * Consider using {@link #getCurrentLexeme()} for safer string extraction.
+     *
+     * @param lexeme The byte array to populate.
+     */
     public void populateLexeme(byte[] lexeme) {
-        if(beginOffset == forwardOffset) {
-            for(int i=lexemeBegin;i<=forward;i++) {
-                lexeme[i-lexemeBegin] = forwardBuffer[i];
-            }
-        } else {
-            int count = 0;
-            for(int i=lexemeBegin;i<bufferSize;i++) {
-                lexeme[count++] = beginBuffer[i];
-            }
-            for(int i=0;i<=forward;i++) {
-                lexeme[count++] = forwardBuffer[i];
-            }
-        }
+        byte[] currentLexemeBytes = getCurrentLexemeBytes();
+        System.arraycopy(currentLexemeBytes, 0, lexeme, 0, Math.min(lexeme.length, currentLexemeBytes.length));
+        // Consider warning or error if provided lexeme array is too small.
     }
 
+    /**
+     * Gets the current lexeme as a String.
+     * Handles cases where the lexeme spans across the two buffers.
+     *
+     * @return The String representation of the current lexeme.
+     */
     public String getCurrentLexeme() {
-        byte[] str = new byte[forwardOriginal - lexemeBeginOriginal + 1];
-        if(beginOffset == forwardOffset) {
-            for(int i=lexemeBegin;i<=forward;i++) {
-                str[i-lexemeBegin] = forwardBuffer[i];
-            }
-        } else {
-            int count = 0;
-            for(int i=lexemeBegin;i<bufferSize;i++) {
-                str[count++] = beginBuffer[i];
-            }
-            for(int i=0;i<=forward;i++) {
-                str[count++] = forwardBuffer[i];
-            }
-        }
-        return new String(str);
+        // Assuming default charset is acceptable. For specific encoding, use new String(bytes, Charset).
+        return new String(getCurrentLexemeBytes());
     }
+
+
+    // Resource management
     @Override
     public void close() {
         freeTokens.clear();
     }
 
+    // ========================================================================
+    // Token Pooling
+    // ========================================================================
+
     /**
-     * Create a token.
+     * Retrieves a reusable Token object from the pool or creates a new one if the pool is empty.
      *
-     * @return a token.
+     * @return A Token object ready for population.
      */
     protected Token getFreeToken() {
-        @Nullable Token freeToken = freeTokens.peek();
-        if (freeToken == null) {
-//            System.out.println("New token created");
+        @Nullable Token freeToken = freeTokens.peek(); // Either use an already existing object
+        if (freeToken == null) { // Or create a new one if not present
             freeToken = new Token(this);
         }
         return freeToken;
@@ -211,9 +330,10 @@ abstract class AbstractLexer implements Lexer {
         freeTokens.push(freeToken);
     }
 
-    public int getBufferSize() {
-        return bufferSize;
-    }
+
+    // ========================================================================
+    // Constants (Moved from original location for better grouping)
+    // ========================================================================
 
     protected static final byte QUOTATION_MARK = 0x22;
     protected static final byte APOSTROPHE     = 0x27;
