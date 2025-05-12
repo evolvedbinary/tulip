@@ -360,23 +360,21 @@ public class XPath10LexerTest {
         assertEquals(expected, lex(input));
     }
 
-    // ========================================================================
-    // Not programmed yet or edge cases which don't work
-    // ========================================================================
-
-
     // --- Node Types ---
     @Test
     void testNodeTypes() throws IOException {
         String input = "node() text() comment() processing-instruction()";
         List<TokenInfo> expected = List.of(
-                new TokenInfo(TokenType.NODE_TYPE, "node"), new TokenInfo(TokenType.LPAREN, "("), new TokenInfo(TokenType.RPAREN, ")"), // Assuming IDENTIFIER
-                new TokenInfo(TokenType.TEXT_NODE, "text"), new TokenInfo(TokenType.LPAREN, "("), new TokenInfo(TokenType.RPAREN, ")"), // Assuming IDENTIFIER
-                new TokenInfo(TokenType.COMMENT_NODE, "comment"), new TokenInfo(TokenType.LPAREN, "("), new TokenInfo(TokenType.RPAREN, ")"), // Assuming IDENTIFIER
-                new TokenInfo(TokenType.PROCESSING_INSTRUCTION, "processing-instruction"), new TokenInfo(TokenType.LPAREN, "("), new TokenInfo(TokenType.RPAREN, ")"), // Assuming IDENTIFIER
+                new TokenInfo(TokenType.FUNCTION, "node"), new TokenInfo(TokenType.LPAREN, "("), new TokenInfo(TokenType.RPAREN, ")"), // Assuming IDENTIFIER
+                new TokenInfo(TokenType.FUNCTION, "text"), new TokenInfo(TokenType.LPAREN, "("), new TokenInfo(TokenType.RPAREN, ")"), // Assuming IDENTIFIER
+                new TokenInfo(TokenType.FUNCTION, "comment"), new TokenInfo(TokenType.LPAREN, "("), new TokenInfo(TokenType.RPAREN, ")"), // Assuming IDENTIFIER
+                new TokenInfo(TokenType.FUNCTION, "processing-instruction"), new TokenInfo(TokenType.LPAREN, "("), new TokenInfo(TokenType.RPAREN, ")"), // Assuming IDENTIFIER
                 new TokenInfo(TokenType.EOF, "")
         );
         assertEquals(expected, lex(input));
     }
 
+    // ========================================================================
+    // Not programmed yet or edge cases which don't work
+    // ========================================================================
 }

@@ -51,7 +51,9 @@ public class XPath10Lexer extends AbstractLexer {
                 // Boolean functions
                 "boolean", "not", "true", "false", "lang",
                 // Number functions
-                "number", "sum", "floor", "ceiling", "round"
+                "number", "sum", "floor", "ceiling", "round",
+                // Node Test Functions
+                "node", "text", "comment", "processing-instruction"
         );
         for (String function : functionNames) {
             trie.insert(function, true, false);
