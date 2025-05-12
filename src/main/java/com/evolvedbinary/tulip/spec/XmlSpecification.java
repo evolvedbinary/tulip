@@ -12,23 +12,17 @@
  *
  * Additional Use Grant: None
  */
-package com.evolvedbinary.tulip;
+package com.evolvedbinary.tulip.spec;
 
-import org.jspecify.annotations.Nullable;
-
-import java.io.Closeable;
-import java.io.IOException;
-
-public interface Lexer extends Closeable {
-
+public interface XmlSpecification {
 
     /**
-     * Read the next token.
+     * Determine whether the supplied argument is white-space or not,
+     * as defined by {@see https://www.w3.org/TR/xml/#NT-S}.
      *
-     * @return the next token, or null if we have reached the end of the source.
+     * @param b a byte.
+     *
+     * @return true of the supplied argument is whitespace.
      */
-    @Nullable Token next() throws IOException;
-
-    @Override
-    void close();
+    boolean isWhiteSpace(byte b);
 }

@@ -12,7 +12,7 @@
  *
  * Additional Use Grant: None
  */
-package com.evolvedbinary.tulip;
+package com.evolvedbinary.tulip.lexer;
 
 public class Token implements AutoCloseable {
 
@@ -22,29 +22,29 @@ public class Token implements AutoCloseable {
     int lineNumber;
     int columnNumber;
 
+    byte[] forwardBuffer;
+    byte[] beginBuffer;
+    int forward;
     int lexemeBegin;
-    int lexemeEnd;
-    byte[] buffer;
+    int beginOffset = 0;
+    int forwardOffset = 0;
 
     Token(final AbstractLexer lexer) {
         this.lexer = lexer;
     }
 
-    TokenType getTokenType() {
+    public TokenType getTokenType() {
         return tokenType;
     }
 
-    public int getLexemeBegin() {
-        return lexemeBegin;
+    public String getLexeme() {
+        if(beginOffset == forwardOffset) {
+            return new String(forwardBuffer, lexemeBegin, forward - lexemeBegin + 1);
+        } else {
+            return (new String(beginBuffer, lexemeBegin, beginBuffer.length-lexemeBegin)).concat(new String(forwardBuffer, 0, forward+1));
+        }
     }
 
-    public int getLexemeEnd() {
-        return lexemeEnd;
-    }
-
-    public byte[] getBuffer() {
-        return buffer;
-    }
 
     @Override
     public void close() {

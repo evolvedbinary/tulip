@@ -12,13 +12,18 @@
  *
  * Additional Use Grant: None
  */
-package com.evolvedbinary.tulip;
+package com.evolvedbinary.tulip.lexer;
 
-public class XPath31Lexer extends XPath30Lexer {
+import com.evolvedbinary.tulip.source.Source;
+import com.evolvedbinary.tulip.spec.XmlSpecification;
 
-    protected XPath31Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) {
+import java.io.IOException;
+
+public class XPath30Lexer extends XPath10Lexer {
+
+    protected XPath30Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) throws IOException {
         super(source, bufferSize, xmlSpecification);
     }
 
-    // TODO(AR) override relevant rules from XPath 3.1
+    // TODO(AR) override relevant rules from XPath 1.0
 }
