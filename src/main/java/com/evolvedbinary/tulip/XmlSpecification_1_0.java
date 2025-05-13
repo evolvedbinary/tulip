@@ -17,13 +17,13 @@ package com.evolvedbinary.tulip;
 /**
  * Functions related to the XML 1.0 specification {@see https://www.w3.org/TR/xml}.
  */
-public class XmlSpecification_1_0 implements XmlSpecification {
+public class XmlSpecification_1_0 extends AbstractXmlSpecification {
 
     @Override
     public boolean isWhiteSpace(final byte b) {
-       return b == 0x20    // SPACE
-            || b == 0x09   // TAB
-            || b == 0x0D   // CR
-            || b == 0x0A;  // LF
+       return b == SPACE
+            || b == TAB
+            || b == CARRIAGE_RETURN
+            || b == LINE_FEED;
     }
 }

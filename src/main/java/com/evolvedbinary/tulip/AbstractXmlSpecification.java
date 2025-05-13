@@ -15,18 +15,13 @@
 package com.evolvedbinary.tulip;
 
 /**
- * Interface for the implementation of functions
- * related to a W3C XML Specification.
+ * Base class for an XML Specification.
  */
-public interface XmlSpecification {
+public abstract class AbstractXmlSpecification implements XmlSpecification {
 
-    /**
-     * Determine whether the supplied argument is white-space or not,
-     * as defined by {@see https://www.w3.org/TR/xml/#NT-S}.
-     *
-     * @param b a byte.
-     *
-     * @return true of the supplied argument is whitespace.
-     */
-    boolean isWhiteSpace(byte b);
+    // Constants for characters
+    protected static final byte SPACE           = 0x20;
+    protected static final byte TAB             = 0x09;
+    protected static final byte CARRIAGE_RETURN = 0x0D;
+    protected static final byte LINE_FEED       = 0x0A;
 }
