@@ -26,6 +26,8 @@ public class Token implements AutoCloseable {
     int lexemeEnd;
     byte[] buffer;
 
+    private boolean closed;
+
     Token(final AbstractLexer lexer) {
         this.lexer = lexer;
     }
@@ -48,10 +50,17 @@ public class Token implements AutoCloseable {
 
     @Override
     public void close() {
-        releaseToken();
+        if (!closed) {
+            releaseToken();
+        }
+        closed = true;
     }
 
-    private void releaseToken() {
+    protected void releaseToken() {
         lexer.reuseToken(this);
+    }
+
+    void reset() {
+        closed = false;
     }
 }

@@ -21,28 +21,29 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 /**
- * Base class for a lexer.
+ * Base class for a Lexer.
  */
 abstract class AbstractLexer implements Lexer {
 
-    private final Source source;
-    private final int bufferSize;
-    @Nullable protected byte[] buffer1;
-    @Nullable protected byte[] buffer2;
+    final Source source;
+    final int bufferSize;
+    @Nullable byte[] buffer1;
+    @Nullable byte[] buffer2;
 
     @Nullable byte[] currentBuffer;
-    @Nullable protected int currentBufferLength = 0;
+    @Nullable int currentBufferLength = 0;
 
     protected final XmlSpecification xmlSpecification;
 
     int lexemeBegin = 0;
     int forward = -1;
 
-    private final Deque<Token> freeTokens = new ArrayDeque<>();
+    final Deque<Token> freeTokens = new ArrayDeque<>();
 
     /**
      * @param source the source to read from.
      * @param bufferSize the size of the buffer to use for reading. The lexer will potentially allocate two of these.
+     * @param xmlSpecification the XML specification that we should lex for.
      */
     protected AbstractLexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) {
         this.source = source;
@@ -102,13 +103,39 @@ abstract class AbstractLexer implements Lexer {
     }
 
     /**
-     * Create a token.
+     * Creates a token of a specific type.
      *
-     * @return a token.
+     * @param tokenType the type of the token to create.
+     *
+     * @return the token.
+     */
+    protected Token token(final TokenType tokenType) {
+        final Token token = getFreeToken();
+        token.tokenType = tokenType;
+        token.lexemeBegin = lexemeBegin;
+        token.lexemeEnd = forward;
+        token.buffer = currentBuffer;
+        // TODO(AR) set line number, column number
+        return token;
+    }
+
+    /**
+     * Get or create a token object.
+     *
+     * Tries to find a free Token object first and return it,
+     * if not, a new Token object is created.
+     *
+     * When the token is finished with {@link Token#close()}
+     * should be called so that the token may be reused in
+     * the future.
+     *
+     * @return a token object.
      */
     protected Token getFreeToken() {
-        @Nullable Token freeToken = freeTokens.peek();
+        @Nullable Token freeToken = freeTokens.pollFirst();
         if (freeToken != null) {
+            freeToken.reset();
+        } else {
             freeToken = new Token(this);
         }
         return freeToken;

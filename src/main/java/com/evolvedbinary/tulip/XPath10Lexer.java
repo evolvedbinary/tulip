@@ -16,6 +16,11 @@ package com.evolvedbinary.tulip;
 
 import java.io.IOException;
 
+/**
+ * Implements an XPath 1.0 Lexer as described in
+ * the W3C Recommendation "XML Path Language (XPath) Version 1.0".
+ * Specifically {@see https://www.w3.org/TR/xpath-10/#exprlex}.
+ */
 public class XPath10Lexer extends AbstractLexer {
 
     protected XPath10Lexer(final Source source, final int bufferSize, final XmlSpecification xmlSpecification) {
@@ -28,34 +33,28 @@ public class XPath10Lexer extends AbstractLexer {
         readNextChar();
         final byte b = currentBuffer[forward];
 
-        TokenType tokenType = null;
 
         if (xmlSpecification.isWhiteSpace(b)) {
             // XML white-space
 
         } else if (isDigit(b)) {
-            // IntegerLiteral or (DecimalLiteral or Double Literal) starting with a digit
+            // Number starting with a digit
 
         } else if (b == FULL_STOP) {
-            // Decimal Literal or Double Literal starting with a '.'
+            // Number starting with a '.'
 
         } else if (b == QUOTATION_MARK || b == APOSTROPHE) {
             // Literal
             readLiteral(b);
-            tokenType = TokenType.LITERAL;
+            return token(TokenType.LITERAL);
 
         } else if (b == Q) {
             // URIQualifiedName
 
         }
 
-        final Token token = getFreeToken();
-        token.tokenType = tokenType;
-        token.lexemeBegin = lexemeBegin;
-        token.lexemeEnd = forward;
-        token.buffer = currentBuffer;
-        // TODO(AR) set line number, column number
-        return token;
+        // TODO(AR) what to do here? maybe we are at end of file, or an error state?
+        return null;
     }
 
     /**

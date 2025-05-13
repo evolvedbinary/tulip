@@ -19,6 +19,11 @@ package com.evolvedbinary.tulip;
  */
 public class XmlSpecification_1_0 extends AbstractXmlSpecification {
 
+    public static final XmlSpecification INSTANCE = new XmlSpecification_1_0();
+
+    private XmlSpecification_1_0() {
+    }
+
     @Override
     public boolean isWhiteSpace(final byte b) {
        return b == SPACE
