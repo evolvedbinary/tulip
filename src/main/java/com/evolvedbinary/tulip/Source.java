@@ -34,7 +34,7 @@ public interface Source extends Closeable {
      *
      * @param buffer the buffer to read data into.
      *
-     * @return the number of bytes read into the buffer.
+     * @return the number of bytes read into the buffer, or -1 if the end of the buffer has been reached.
      */
     int read(byte[] buffer) throws IOException;
 }
